@@ -22,6 +22,8 @@
 | 11 | [The finally Block](#11--the-finally-block) |
 | 12 | [Methods to Print Exception Information](#12--methods-to-print-exception-information) |
 | 13 | [Best Practices for Exception Handling](#13--best-practices-for-exception-handling) |
+| 14 | [Difference Between final, finally and finalize()](#14-difference-between-final-finally-and-finalize-in-java) |
+
 ---
 
 ## 1. 🤔 What is an Exception in Java?
@@ -1142,4 +1144,144 @@ Something went wrong. Please try again.
 > 💡 **Tip:** Log the full exception details **internally** for developers, but show a simple message **externally** to users.
 
 ---
+
+## 14. Difference Between final, finally and finalize() in Java
+
+### Java: `final` vs `finally` vs `finalize()`
+
+A classic interview topic — three keywords/constructs that sound alike but serve completely different purposes in Java.
+
+---
+
+## Quick Comparison
+
+| Aspect | `final` | `finally` | `finalize()` |
+|---|---|---|---|
+| **What it is** | Keyword / modifier | Block | Method |
+| **Used with** | Variables, methods, classes | `try-catch` statement | `Object` class (overridden) |
+| **Purpose** | Restrict modification / inheritance | Guarantee cleanup code runs | Cleanup before garbage collection |
+| **When it runs** | N/A (compile-time restriction) | Always, after try-catch | Uncertain — GC decides |
+| **Status** | Actively used | Actively used | Deprecated since Java 9 |
+
+---
+
+## 1. `final` — Keyword
+
+Applies restrictions on variables, methods, or classes. There are **three uses**:
+
+### a) `final` variable — value can't be reassigned
+```java
+final int x = 10;
+x = 20; // ❌ Compile error
+```
+
+### b) `final` method — can't be overridden by a subclass
+```java
+class Vehicle {
+    final void start() {
+        System.out.println("Starting...");
+    }
+}
+
+class Car extends Vehicle {
+    void start() { } // ❌ Compile error — cannot override
+}
+```
+
+### c) `final` class — can't be extended/inherited
+```java
+final class Vehicle { }
+
+class Car extends Vehicle { } // ❌ Compile error
+```
+
+> **Note:** A `final` reference variable can't be reassigned, but if it refers to a mutable object, the object's internal state can still change.
+```java
+final List<String> names = new ArrayList<>();
+names.add("Sanket"); // ✅ Allowed — modifying object, not reassigning reference
+names = new ArrayList<>(); // ❌ Compile error
+```
+
+---
+
+## 2. `finally` — Block
+
+A block that **always executes** after a `try-catch`, regardless of whether an exception occurred — typically used for cleanup (closing files, DB connections, sockets, etc.).
+
+```java
+try {
+    int result = 10 / 0;
+} catch (ArithmeticException e) {
+    System.out.println("Caught exception");
+} finally {
+    System.out.println("This always runs");
+}
+```
+
+**Output:**
+```
+Caught exception
+This always runs
+```
+
+### Key behaviors
+- Executes even if there's a `return` statement inside `try` or `catch`.
+- Executes even if an exception is **not** caught (propagates after `finally` runs).
+- The **only** way to skip `finally` is calling `System.exit()` or a JVM crash.
+
+```java
+public int test() {
+    try {
+        return 1;
+    } finally {
+        System.out.println("finally runs before return completes");
+    }
+}
+```
+
+---
+
+## 3. `finalize()` — Method
+
+A method inherited from the `Object` class, historically called by the **garbage collector** just before an object is destroyed — meant for last-chance resource cleanup.
+
+```java
+@Override
+protected void finalize() throws Throwable {
+    System.out.println("Object is being garbage collected");
+}
+```
+
+### Why it's avoided in modern Java
+- **Deprecated since Java 9**, marked for removal in future versions.
+- Execution timing is **unpredictable** — depends entirely on the GC, and it may **never run** at all.
+- Can cause performance issues and resource leaks if relied upon.
+
+### Modern replacement: try-with-resources + `AutoCloseable`
+```java
+try (FileInputStream fis = new FileInputStream("file.txt")) {
+    // use resource
+} // automatically closed here, deterministically
+```
+
+Or use `java.lang.ref.Cleaner` (introduced in Java 9) for cases needing GC-triggered cleanup without `finalize()`.
+
+---
+
+## Interview One-Liner
+
+> `final` is a keyword used to restrict reassignment, overriding, or inheritance. `finally` is a block that always executes after try-catch, typically for cleanup. `finalize()` is a deprecated `Object` method once called by the garbage collector before object destruction — replaced today by try-with-resources and `AutoCloseable`.
+
+---
+
+## Common Follow-up Questions
+
+**Q: Can a `finally` block contain a `return` statement?**
+Yes, but it's bad practice — a `return` in `finally` overrides any `return`/exception from `try`/`catch`, silently swallowing them.
+
+**Q: Is `final` the same as immutability?**
+No. `final` only prevents reassignment of the reference. For true immutability, the object itself must be designed to not expose mutator methods (like `String` or records).
+
+**Q: Why was `finalize()` deprecated?**
+Because of non-deterministic execution, potential to delay GC, and risk of resource leaks — replaced by `try-with-resources`, `AutoCloseable`, and `Cleaner`.
 
