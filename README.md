@@ -181,20 +181,133 @@ These are exceptions that occur **at runtime** and do **NOT** need explicit hand
 
 ## 6. 🚨 Error vs Exception
 
-Both `Error` and `Exception` extend `Throwable`, but they serve very different purposes.
+Both `Error` and `Exception` are children of `Throwable` — but they are **very different** in nature.
 
-| Feature | Error | Exception |
-|---------|-------|-----------|
-| **Severity** | Very serious, system-level | Recoverable, application-level |
-| **Can be handled?** | Usually **NO** | Usually **YES** |
-| **Caused by** | JVM / system environment | Application logic or external resources |
-| **Examples** | `OutOfMemoryError`, `StackOverflowError`, `VirtualMachineError` | `IOException`, `NullPointerException` |
-| **Sub-types** | `AssertionError`, `LinkageError`, `VirtualMachineError` | Checked & Unchecked Exceptions |
+> 🧠 **One-line difference:**
+> - **Error** = Something went wrong with the **JVM/system** — you usually **cannot fix it**.
+> - **Exception** = Something went wrong in your **code/logic** — you usually **can fix it**.
 
-### Analogy 🎯
+---
 
-> - **Error** = An **earthquake** — you can't control it, you can't "handle" it; you just have to hope it doesn't happen. (e.g., `OutOfMemoryError`)
-> - **Exception** = A **flat tyre** — inconvenient, but you CAN fix it with the right tools and get back on the road. (e.g., `FileNotFoundException`)
+### 💥 What is an Error?
+
+An **Error** is a **serious problem** at the system/JVM level that your program **cannot recover from**.
+
+> Think of it like a **power outage in a hospital** — the hospital (your app) just can't run. You can't "catch" a power cut and keep going.
+
+#### Common Errors with Examples
+
+**1. `StackOverflowError`** — happens when a method calls itself infinitely (infinite recursion)
+
+```java
+public class Demo {
+    static void infiniteMethod() {
+        infiniteMethod(); // calls itself forever!
+    }
+
+    public static void main(String[] args) {
+        infiniteMethod(); // 💥 StackOverflowError
+    }
+}
+```
+
+**2. `OutOfMemoryError`** — happens when the JVM runs out of heap memory
+
+```java
+public class Demo {
+    public static void main(String[] args) {
+        int[] arr = new int[Integer.MAX_VALUE]; // 💥 OutOfMemoryError
+    }
+}
+```
+
+> ❌ These errors **cannot be recovered** from — even if you try to `catch` them, the JVM is already in a broken state.
+
+---
+
+### ✅ What is an Exception?
+
+An **Exception** is a **problem in your application code** that you **can handle** and recover from gracefully.
+
+> Think of it like a **flat tyre** — annoying, but you have a spare tyre (exception handling). Fix it and continue the journey!
+
+#### Common Exceptions with Examples
+
+**1. `ArithmeticException`** — dividing a number by zero
+
+```java
+public class Demo {
+    public static void main(String[] args) {
+        int result = 10 / 0; // 💥 ArithmeticException: / by zero
+    }
+}
+```
+✅ **Fixed with try-catch:**
+```java
+try {
+    int result = 10 / 0;
+} catch (ArithmeticException e) {
+    System.out.println("Cannot divide by zero! " + e.getMessage());
+}
+// Program continues normally ✅
+```
+
+**2. `NullPointerException`** — calling a method on a `null` object
+
+```java
+public class Demo {
+    public static void main(String[] args) {
+        String name = null;
+        System.out.println(name.length()); // 💥 NullPointerException
+    }
+}
+```
+✅ **Fixed:**
+```java
+if (name != null) {
+    System.out.println(name.length());
+} else {
+    System.out.println("Name is null!");
+}
+```
+
+**3. `ArrayIndexOutOfBoundsException`** — accessing an index that doesn't exist
+
+```java
+int[] nums = {10, 20, 30};
+System.out.println(nums[5]); // 💥 ArrayIndexOutOfBoundsException
+```
+✅ **Fixed:**
+```java
+try {
+    System.out.println(nums[5]);
+} catch (ArrayIndexOutOfBoundsException e) {
+    System.out.println("Index does not exist!");
+}
+```
+
+---
+
+### 🆚 Error vs Exception — Side-by-Side
+
+| Feature | ❌ Error | ✅ Exception |
+|---------|----------|-------------|
+| **Who causes it?** | JVM / System | Your code / logic |
+| **Can you handle it?** | Usually **NO** | Usually **YES** |
+| **Should you catch it?** | ❌ Almost never | ✅ Yes, with try-catch |
+| **Program recovery?** | Usually impossible | Yes, program can continue |
+| **Examples** | `StackOverflowError`, `OutOfMemoryError` | `NullPointerException`, `IOException` |
+| **Analogy** | Power outage 🔌 (can't fix) | Flat tyre 🚗 (can fix with spare) |
+
+---
+
+### 📌 Quick Memory Tip
+
+```
+Throwable
+├── Error        → JVM is sick 🤒 — you can't cure it
+└── Exception    → Your code has a bug 🐛 — you CAN fix it
+```
 
 ---
 
