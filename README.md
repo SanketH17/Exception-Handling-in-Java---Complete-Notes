@@ -22,8 +22,6 @@
 | 11 | [The finally Block](#11--the-finally-block) |
 | 12 | [Methods to Print Exception Information](#12--methods-to-print-exception-information) |
 | 13 | [Best Practices for Exception Handling](#13--best-practices-for-exception-handling) |
-| 14 | [Quick Revision Cheat-Sheet](#14--quick-revision-cheat-sheet) |
-
 ---
 
 ## 1. 🤔 What is an Exception in Java?
