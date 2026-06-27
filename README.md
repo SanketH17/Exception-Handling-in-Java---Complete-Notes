@@ -2224,27 +2224,6 @@ public class Main {
 
 ---
 
-### ⚠️ `throws` with Unchecked Exceptions — Not Required but Allowed
-
-For **unchecked exceptions** (subclasses of `RuntimeException`), Java does **not force** you to use `throws`. But you **can** add it for documentation purposes.
-
-```java
-public class Main {
-    // throws is OPTIONAL here — ArithmeticException is unchecked
-    public static int divide(int a, int b) throws ArithmeticException {
-        return a / b;
-    }
-
-    public static void main(String[] args) {
-        try {
-            System.out.println(divide(10, 0));
-        } catch (ArithmeticException e) {
-            System.out.println("⚠️ Cannot divide by zero!");
-        }
-    }
-}
-```
-
 > 💡 **Rule of thumb:** `throws` is **mandatory** for checked exceptions, **optional** for unchecked exceptions.
 
 ---
