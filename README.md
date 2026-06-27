@@ -26,6 +26,7 @@
 | 15 | [Difference Between final, finally and finalize()](#15-difference-between-final-finally-and-finalize-in-java) |
 | 16 | [The throw Keyword](#16--the-throw-keyword-in-java) |
 | 17 | [The throws Keyword](#17--the-throws-keyword-in-java) |
+| 18 | [throw vs throws — Complete Comparison](#18--throw-vs-throws--complete-comparison-interview-ready) |
 
 ---
 
@@ -2291,4 +2292,9 @@ Multiple exceptions   →  throws IOException, ClassNotFoundException
 Passing up the chain  →  methodA() throws X  →  methodB() throws X  →  main() catches X
 ```
 
+---
 
+
+### Final Interview One-Liner (Memorize This)
+
+`throw` is used to create and throw an exception inside a method. `throws` is used in the method declaration to tell the caller that the method may throw one or more exceptions, so the caller should handle or propagate them.
