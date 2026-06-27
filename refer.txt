@@ -1,0 +1,57 @@
+A checked custom exception extends Exception directly (not RuntimeException). The key difference: the compiler forces anyone calling your method to either catch it or declare it with throws — otherwise the code won't even compile.
+Step-by-Step Example
+java// Step 1: Create custom checked exception by extending Exception
+class InvalidPincodeException extends Exception {
+    public InvalidPincodeException(String message) {
+        super(message);
+    }
+}
+
+// Step 2: Use it in your business logic
+class DeliveryService {
+
+    // Notice: "throws InvalidPincodeException" is MANDATORY here
+    public void checkDelivery(String pincode) throws InvalidPincodeException {
+        if (!pincode.matches("\\d{6}")) {
+            throw new InvalidPincodeException(
+                "Invalid pincode: " + pincode + ". Must be 6 digits."
+            );
+        }
+        System.out.println("Delivery available for pincode: " + pincode);
+    }
+}
+
+// Step 3: Caller is FORCED to handle it
+public class Test {
+    public static void main(String[] args) {
+        DeliveryService service = new DeliveryService();
+
+        try {
+            service.checkDelivery("4221");   // invalid -> only 4 digits
+        } catch (InvalidPincodeException e) {
+            System.out.println("Caught: " + e.getMessage());
+        }
+
+        System.out.println("Program continues normally...");
+    }
+}
+Output:
+Caught: Invalid pincode: 4221. Must be 6 digits.
+Program continues normally...
+What Happens If You DON'T Handle It?
+Try removing the try-catch and just calling service.checkDelivery("4221"); directly in main — it won't even compile:
+error: unreported exception InvalidPincodeException; must be caught or declared to be thrown
+        service.checkDelivery("4221");
+                             ^
+This is the whole essence of checked exceptions — Java checks at compile-time that you've thought about handling the failure case.
+Two Ways to Satisfy the Compiler
+Option A — Catch it (handle right here):
+javatry {
+    service.checkDelivery("4221");
+} catch (InvalidPincodeException e) {
+    System.out.println("Caught: " + e.getMessage());
+}
+Option B — Pass the responsibility upward with throws:
+javapublic static void main(String[] args) throws InvalidPincodeException {
+    service.checkDelivery("4221");   // no try-catch needed, but now main() itself can throw it
+}

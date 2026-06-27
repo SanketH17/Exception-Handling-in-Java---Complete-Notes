@@ -25,6 +25,7 @@
 | 14 | [Best Practices for Exception Handling](#14--best-practices-for-exception-handling) |
 | 15 | [Difference Between final, finally and finalize()](#15-difference-between-final-finally-and-finalize-in-java) |
 | 16 | [The throw Keyword](#16--the-throw-keyword-in-java) |
+| 17 | [The throws Keyword](#17--the-throws-keyword-in-java) |
 
 ---
 
@@ -1836,35 +1837,30 @@ Checked exceptions are for problems caused by **external factors** — things ou
 #### Step 1: Create the Custom Exception Class
 
 ```java
-// This is our custom exception — it extends Exception (checked)
-public class InsufficientFundsException extends Exception {
-    public InsufficientFundsException(String message) {
+// Step 1: Create custom checked exception by extending Exception
+class InvalidPincodeException extends Exception {
+    public InvalidPincodeException(String message) {
         super(message);
     }
 }
 ```
 
-#### Step 2: Throw It in Your Code
+#### Step 2: Use It in Your Business Logic
 
 Since this is a **checked** exception, the method that throws it **must declare** it using `throws`:
 
 ```java
-public class BankAccount {
-    private double balance;
+// Step 2: Use it in your business logic
+class DeliveryService {
 
-    public BankAccount(double balance) {
-        this.balance = balance;
-    }
-
-    // ⬇️ Notice the 'throws' keyword in the method signature
-    public void withdraw(double amount) throws InsufficientFundsException {
-        if (amount > balance) {
-            throw new InsufficientFundsException(
-                "Cannot withdraw ₹" + amount + ". Available balance: ₹" + balance
+    // Notice: "throws InvalidPincodeException" is MANDATORY here
+    public void checkDelivery(String pincode) throws InvalidPincodeException {
+        if (!pincode.matches("\\d{6}")) {
+            throw new InvalidPincodeException(
+                "Invalid pincode: " + pincode + ". Must be 6 digits."
             );
         }
-        balance -= amount;
-        System.out.println("✅ Withdrawn: ₹" + amount + " | Remaining: ₹" + balance);
+        System.out.println("Delivery available for pincode: " + pincode);
     }
 }
 ```
@@ -1873,23 +1869,23 @@ public class BankAccount {
 > Because it's a checked exception — Java says: *"This method might fail. Warn everyone who calls it!"*
 > The `throws` keyword is like a **warning label** ⚠️ on the method.
 
-#### Step 3: Handle It with try-catch (Mandatory!)
+#### Step 3: Caller is FORCED to Handle It
 
 The compiler **forces** you to handle checked exceptions — you can't ignore them:
 
 ```java
-public class Main {
+// Step 3: Caller is FORCED to handle it
+public class Test {
     public static void main(String[] args) {
-        BankAccount account = new BankAccount(1000);
+        DeliveryService service = new DeliveryService();
 
         try {
-            account.withdraw(500);     // ✅ Works
-            account.withdraw(800);     // 💥 Throws InsufficientFundsException
-        } catch (InsufficientFundsException e) {
-            System.out.println("⚠️ Transaction failed: " + e.getMessage());
+            service.checkDelivery("4221");   // invalid → only 4 digits
+        } catch (InvalidPincodeException e) {
+            System.out.println("Caught: " + e.getMessage());
         }
 
-        System.out.println("Program continues!");
+        System.out.println("Program continues normally...");
     }
 }
 ```
@@ -1897,20 +1893,41 @@ public class Main {
 **Output:**
 
 ```text
-✅ Withdrawn: ₹500.0 | Remaining: ₹500.0
-⚠️ Transaction failed: Cannot withdraw ₹800.0. Available balance: ₹500.0
-Program continues!
+Caught: Invalid pincode: 4221. Must be 6 digits.
+Program continues normally...
 ```
 
-> ❌ **What happens if you DON'T handle it?**
-> ```java
-> // This WON'T COMPILE!
-> public static void main(String[] args) {
->     BankAccount account = new BankAccount(1000);
->     account.withdraw(2000);   // ❌ Compiler Error: Unhandled exception
-> }
-> ```
-> The compiler says: *"You must handle `InsufficientFundsException` with try-catch or declare it with throws!"*
+#### What Happens If You DON'T Handle It?
+
+Try removing the `try-catch` and calling `service.checkDelivery("4221")` directly — it **won't even compile**:
+
+```text
+error: unreported exception InvalidPincodeException; must be caught or declared to be thrown
+        service.checkDelivery("4221");
+                             ^
+```
+
+This is the whole essence of checked exceptions — Java checks at **compile-time** that you've thought about handling the failure case.
+
+#### Two Ways to Satisfy the Compiler
+
+**Option A — Catch it (handle right here):**
+
+```java
+try {
+    service.checkDelivery("4221");
+} catch (InvalidPincodeException e) {
+    System.out.println("Caught: " + e.getMessage());
+}
+```
+
+**Option B — Pass the responsibility upward with `throws`:**
+
+```java
+public static void main(String[] args) throws InvalidPincodeException {
+    service.checkDelivery("4221");   // no try-catch needed, but now main() itself can throw it
+}
+```
 
 ---
 
@@ -1949,6 +1966,350 @@ throws  →  Declare that a method might throw an exception
 
 Custom Unchecked  →  extends RuntimeException  →  compiler won't force handling
 Custom Checked    →  extends Exception          →  compiler WILL force handling
+```
+
+---
+
+## 17. 📢 The `throws` Keyword in Java
+
+In the previous section we learned `throw` — which **manually creates and throws** an exception inside a method. Now let's learn `throws` — which **declares** that a method *might* throw an exception, so the **caller** knows about it.
+
+### What is `throws`?
+
+> 📝 **Definition:** The `throws` keyword is used to **declare an exception**. It gives information to the caller method that there may occur an exception, so it is better for the caller method to provide the exception handling code so that the **normal flow can be maintained**.
+
+In simple words:
+
+- `throws` is a **warning label** you put on a method.
+- It says: *"Hey, this method might cause a problem — whoever calls me should be ready to handle it!"*
+- The method itself **doesn't handle** the exception — it **passes the responsibility** to the caller.
+
+### Real-Life Analogy 🎯
+
+> Imagine a delivery driver 📦 carrying a fragile package.
+> The driver puts a **"FRAGILE — Handle with Care"** sticker on the box (`throws` declaration).
+> The driver **doesn't** bubble-wrap it himself — he **warns the receiver** (the caller) to handle it carefully.
+> If the receiver ignores the warning → 💥 the package breaks (exception crashes the program).
+> If the receiver handles it carefully → ✅ everything is fine.
+
+---
+
+### Why Do We Need `throws`?
+
+When a method contains code that might cause a **checked exception** (like reading a file), Java's compiler says:
+
+> *"You MUST either handle this exception here (try-catch) OR declare it with `throws` so the caller handles it."*
+
+`throws` lets you choose **Option B** — pass the responsibility upward.
+
+| Approach | What You Do | Analogy |
+|----------|-------------|---------|
+| `try-catch` | Handle the problem **right here** inside the method | Fix the flat tyre yourself 🔧 |
+| `throws` | **Warn** the caller and let **them** handle it | Call roadside assistance and let them fix it 📞 |
+
+---
+
+### Basic Syntax
+
+```java
+accessModifier returnType methodName(parameters) throws ExceptionType1, ExceptionType2 {
+    // method body — code that might throw an exception
+}
+```
+
+**Key points:**
+- `throws` goes in the **method signature** (not inside the method body).
+- You can declare **one or more** exception types, separated by commas.
+- It's mainly used for **checked exceptions** — unchecked exceptions don't require it.
+
+---
+
+### ✏️ Example 1 — Basic `throws` with a Checked Exception (`IOException`)
+
+Let's say you have a method that reads a file. Reading a file can fail (file might not exist), so `IOException` is a **checked exception** — the compiler forces you to handle or declare it.
+
+**Without `throws` — ❌ Won't compile:**
+
+```java
+import java.io.FileReader;
+import java.io.IOException;
+
+public class Main {
+    // ❌ Compiler Error! IOException is not handled or declared
+    public static void readFile() {
+        FileReader fr = new FileReader("data.txt");
+    }
+}
+```
+
+**With `throws` — ✅ Compiles fine:**
+
+```java
+import java.io.FileReader;
+import java.io.IOException;
+
+public class Main {
+    // ✅ We declare that this method MIGHT throw IOException
+    public static void readFile() throws IOException {
+        FileReader fr = new FileReader("data.txt");
+        System.out.println("File opened successfully!");
+    }
+
+    public static void main(String[] args) {
+        try {
+            readFile();    // Caller handles the declared exception
+        } catch (IOException e) {
+            System.out.println("⚠️ Could not open file: " + e.getMessage());
+        }
+
+        System.out.println("Program continues...");
+    }
+}
+```
+
+**Output (if file doesn't exist):**
+
+```text
+⚠️ Could not open file: data.txt (No such file or directory)
+Program continues...
+```
+
+> 🧠 **What happened?**
+> 1. `readFile()` says *"I might throw an IOException"* using `throws`.
+> 2. `main()` calls `readFile()` and wraps it in a `try-catch` to handle the potential exception.
+> 3. If the file doesn't exist, the exception is caught gracefully — program doesn't crash.
+
+---
+
+### ✏️ Example 2 — `throws` with Multiple Exceptions
+
+A method can declare **multiple exceptions** in a single signature. Just separate them with commas.
+
+```java
+import java.io.FileReader;
+import java.io.IOException;
+
+public class Main {
+    // This method might throw TWO different types of checked exceptions
+    public static void loadData() throws IOException, ClassNotFoundException {
+        // Might throw IOException
+        FileReader fr = new FileReader("config.txt");
+
+        // Might throw ClassNotFoundException
+        Class.forName("com.example.DatabaseDriver");
+
+        System.out.println("Data loaded successfully!");
+    }
+
+    public static void main(String[] args) {
+        try {
+            loadData();
+        } catch (IOException e) {
+            System.out.println("⚠️ File error: " + e.getMessage());
+        } catch (ClassNotFoundException e) {
+            System.out.println("⚠️ Class not found: " + e.getMessage());
+        }
+
+        System.out.println("Program continues...");
+    }
+}
+```
+
+**What happens here?**
+1. `loadData()` declares that it might throw **either** `IOException` or `ClassNotFoundException`.
+2. The caller (`main`) provides **separate catch blocks** for each possible exception.
+3. Whichever exception actually occurs gets handled by the matching catch block.
+
+> 💡 **Tip:** When declaring multiple exceptions, list them separated by commas: `throws ExType1, ExType2, ExType3`
+
+---
+
+### ✏️ Example 3 — Passing `throws` Up the Call Chain
+
+If a caller **also** doesn't want to handle the exception, it can declare `throws` too — passing it further up.
+
+```java
+import java.io.FileReader;
+import java.io.IOException;
+
+public class Main {
+    // Level 1: This method might throw IOException
+    public static void readFile() throws IOException {
+        FileReader fr = new FileReader("notes.txt");
+        System.out.println("File read successfully!");
+    }
+
+    // Level 2: This method ALSO doesn't handle it — passes it up
+    public static void processFile() throws IOException {
+        readFile();    // Just calling, not catching
+    }
+
+    // Level 3: Finally, main() handles the exception
+    public static void main(String[] args) {
+        try {
+            processFile();
+        } catch (IOException e) {
+            System.out.println("⚠️ Error: " + e.getMessage());
+        }
+
+        System.out.println("Program continues...");
+    }
+}
+```
+
+**The exception travels up the chain:**
+
+```text
+readFile()  ──throws──▶  processFile()  ──throws──▶  main()  ──catches it ✅
+```
+
+> 🧠 **Analogy:** Imagine a complaint in a company:
+> - Employee (readFile) says: *"I found a problem but can't solve it"* → passes to Manager (processFile).
+> - Manager says: *"I can't solve it either"* → passes to Director (main).
+> - Director finally handles the complaint ✅
+
+---
+
+### ✏️ Example 4 — Handling `throws` Exceptions with try-catch
+
+When a method declares `throws`, the calling code has **two choices**:
+
+| Option | What You Do | Code |
+|--------|-------------|------|
+| **A — Catch it** | Handle the exception right where you call the method | Wrap in `try-catch` |
+| **B — Declare it** | Pass the responsibility further up | Add `throws` to your own method |
+
+#### Option A — Catch it (Recommended ✅)
+
+```java
+import java.io.FileReader;
+import java.io.IOException;
+
+public class Main {
+    public static void readFile() throws IOException {
+        FileReader fr = new FileReader("data.txt");
+    }
+
+    public static void main(String[] args) {
+        // ✅ Handle it right here
+        try {
+            readFile();
+        } catch (IOException e) {
+            System.out.println("⚠️ File problem: " + e.getMessage());
+        }
+        System.out.println("Safe and running!");
+    }
+}
+```
+
+#### Option B — Declare it (Pass the buck 📤)
+
+```java
+import java.io.FileReader;
+import java.io.IOException;
+
+public class Main {
+    public static void readFile() throws IOException {
+        FileReader fr = new FileReader("data.txt");
+    }
+
+    // main() also declares throws — passes it to the JVM
+    public static void main(String[] args) throws IOException {
+        readFile();    // If this fails, JVM handles it (program crashes)
+    }
+}
+```
+
+> ⚠️ **Warning:** If you keep passing `throws` all the way up to `main()` and nobody catches it, the **JVM will terminate** the program with an ugly error. It's almost always better to catch the exception somewhere!
+
+---
+
+### ⚠️ `throws` with Unchecked Exceptions — Not Required but Allowed
+
+For **unchecked exceptions** (subclasses of `RuntimeException`), Java does **not force** you to use `throws`. But you **can** add it for documentation purposes.
+
+```java
+public class Main {
+    // throws is OPTIONAL here — ArithmeticException is unchecked
+    public static int divide(int a, int b) throws ArithmeticException {
+        return a / b;
+    }
+
+    public static void main(String[] args) {
+        try {
+            System.out.println(divide(10, 0));
+        } catch (ArithmeticException e) {
+            System.out.println("⚠️ Cannot divide by zero!");
+        }
+    }
+}
+```
+
+> 💡 **Rule of thumb:** `throws` is **mandatory** for checked exceptions, **optional** for unchecked exceptions.
+
+---
+
+### 🆚 `throw` vs `throws` — Complete Comparison
+
+These two keywords look almost identical but do **completely different** things:
+
+| Feature | `throw` | `throws` |
+|---------|---------|----------|
+| **What is it?** | A **statement** — an action | A **declaration** — a warning |
+| **Where is it used?** | **Inside** a method body | **In** the method signature |
+| **Purpose** | Actually **creates and throws** an exception object | **Declares** that a method *might* throw an exception |
+| **How many exceptions?** | Throws **one** exception at a time | Can declare **multiple** exceptions |
+| **Followed by** | An **exception object** (`new ExceptionType()`) | **Exception class names** (`IOException, SQLException`) |
+| **Required for checked?** | N/A | ✅ Yes, if not using try-catch |
+
+#### 📌 Example showing both together:
+
+```java
+import java.io.IOException;
+
+public class Main {
+    //                       ↓ "throws" = declaration (in signature)
+    public static void save(String data) throws IOException {
+        if (data == null) {
+            //   ↓ "throw" = action (inside method body)
+            throw new IOException("Data cannot be null!");
+        }
+        System.out.println("Data saved: " + data);
+    }
+
+    public static void main(String[] args) {
+        try {
+            save(null);
+        } catch (IOException e) {
+            System.out.println("⚠️ " + e.getMessage());
+        }
+    }
+}
+```
+
+**Output:**
+
+```text
+⚠️ Data cannot be null!
+```
+
+> 🧠 **Memory trick:**
+> - `throw` = **"Do it!"** (actually throw the exception) 🎯
+> - `throws` = **"Beware!"** (warn that it might happen) ⚠️
+
+---
+
+### 📝 Quick Recap
+
+```text
+throws  →  Goes in the METHOD SIGNATURE  →  Declares what exceptions a method might throw
+throw   →  Goes INSIDE the method BODY   →  Actually creates and throws an exception object
+
+Checked exceptions    →  MUST use throws (or try-catch)  →  compiler enforces it
+Unchecked exceptions  →  throws is OPTIONAL              →  compiler doesn't care
+
+Multiple exceptions   →  throws IOException, ClassNotFoundException
+Passing up the chain  →  methodA() throws X  →  methodB() throws X  →  main() catches X
 ```
 
 
