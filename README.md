@@ -20,9 +20,11 @@
 | 9 | [Control Flow in Try-Catch](#9--control-flow-in-try-catch) |
 | 10 | [Multiple Catch Blocks](#10--multiple-catch-blocks) |
 | 11 | [The finally Block](#11--the-finally-block) |
-| 12 | [Methods to Print Exception Information](#12--methods-to-print-exception-information) |
-| 13 | [Best Practices for Exception Handling](#13--best-practices-for-exception-handling) |
-| 14 | [Difference Between final, finally and finalize()](#14-difference-between-final-finally-and-finalize-in-java) |
+| 12 | [Various Possible Combinations of try-catch-finally](#12--various-possible-combinations-of-try-catch-finally) |
+| 13 | [Methods to Print Exception Information](#13--methods-to-print-exception-information) |
+| 14 | [Best Practices for Exception Handling](#14--best-practices-for-exception-handling) |
+| 15 | [Difference Between final, finally and finalize()](#15-difference-between-final-finally-and-finalize-in-java) |
+| 16 | [The throw Keyword](#16--the-throw-keyword-in-java) |
 
 ---
 
@@ -810,7 +812,322 @@ try block
 
 ---
 
-## 12. 🖨️ Methods to Print Exception Information
+## 12. 🔀 Various Possible Combinations of try-catch-finally
+
+Java has strict rules about how you can combine `try`, `catch`, and `finally`. Not every combination is allowed!
+
+Let's go through **every possible combination** — what works ✅ and what doesn't ❌.
+
+### Real-Life Analogy 🎯
+
+> Think of it like cooking:
+> - **`try`** = Attempting the recipe 🍳
+> - **`catch`** = Your backup plan if something goes wrong 🧯
+> - **`finally`** = Cleaning the kitchen — you ALWAYS do this 🧹
+>
+> You can't just have a backup plan without attempting something first! And you can't attempt something without either a backup plan or a cleanup step.
+
+---
+
+### Combo 1: `try` + `catch` ✅ (Most Common)
+
+The classic combination — try something risky, and catch the error if it happens.
+
+```java
+public class Demo {
+    public static void main(String[] args) {
+        try {
+            int result = 10 / 0;
+        } catch (ArithmeticException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        System.out.println("Program continues!");
+    }
+}
+```
+
+**Output:**
+
+```text
+Error: / by zero
+Program continues!
+```
+
+> ✅ **Verdict:** Perfectly valid. This is the combination you'll use most often.
+
+---
+
+### Combo 2: `try` + `finally` (without `catch`) ✅
+
+You can skip `catch` entirely! This is useful when you don't want to handle the exception yourself but still need to **clean up resources**.
+
+```java
+public class Demo {
+    public static void main(String[] args) {
+        try {
+            System.out.println("Trying something...");
+            int result = 10 / 0;   // 💥 Exception!
+        } finally {
+            System.out.println("Cleanup done!");  // ✅ Still runs!
+        }
+    }
+}
+```
+
+**Output:**
+
+```text
+Trying something...
+Cleanup done!
+Exception in thread "main" java.lang.ArithmeticException: / by zero
+```
+
+> ✅ **Verdict:** Valid! The `finally` block runs, then the exception propagates (crashes the program since nobody caught it).
+
+> 💡 **When to use:** When a method wants to let the exception pass to the caller but still needs to release resources (close files, connections, etc.).
+
+---
+
+### Combo 3: `try` + `catch` + `finally` ✅
+
+The **full package** — handle the error AND do cleanup.
+
+```java
+public class Demo {
+    public static void main(String[] args) {
+        try {
+            int result = 10 / 0;
+        } catch (ArithmeticException e) {
+            System.out.println("Caught: " + e.getMessage());
+        } finally {
+            System.out.println("Finally always runs!");
+        }
+        System.out.println("Program continues!");
+    }
+}
+```
+
+**Output:**
+
+```text
+Caught: / by zero
+Finally always runs!
+Program continues!
+```
+
+> ✅ **Verdict:** The most complete and safest combination.
+
+---
+
+### Combo 4: `try` alone (without `catch` or `finally`) ❌
+
+A `try` block **must** be followed by at least one `catch` or a `finally`. You can't have `try` standing alone.
+
+```java
+// ❌ COMPILE ERROR!
+public class Demo {
+    public static void main(String[] args) {
+        try {
+            int result = 10 / 2;
+        }
+        // No catch, no finally — ERROR!
+    }
+}
+```
+
+**Error:**
+
+```text
+error: 'try' without 'catch', 'finally' or resource declarations
+```
+
+> ❌ **Verdict:** Not allowed! `try` needs a buddy — either `catch` or `finally` (or both).
+
+> 🧠 **Think of it this way:** `try` is like saying "I'm going to attempt something risky." But if you don't have a backup plan (`catch`) or a cleanup crew (`finally`), what's the point of saying it?
+
+---
+
+### Combo 5: `catch` alone (without `try`) ❌
+
+`catch` can **never** exist without `try`. It only makes sense as a response to a `try` block.
+
+```java
+// ❌ COMPILE ERROR!
+public class Demo {
+    public static void main(String[] args) {
+        catch (Exception e) {
+            System.out.println("Error!");
+        }
+    }
+}
+```
+
+**Error:**
+
+```text
+error: 'catch' without 'try'
+```
+
+> ❌ **Verdict:** Makes no sense! You can't catch something if you never tried anything.
+
+> 🧠 **Analogy:** It's like having a safety net 🥅 with no trapeze artist. Who are you trying to catch?
+
+---
+
+### Combo 6: `finally` alone (without `try`) ❌
+
+`finally` can **never** exist without `try`.
+
+```java
+// ❌ COMPILE ERROR!
+public class Demo {
+    public static void main(String[] args) {
+        finally {
+            System.out.println("Cleanup!");
+        }
+    }
+}
+```
+
+**Error:**
+
+```text
+error: 'finally' without 'try'
+```
+
+> ❌ **Verdict:** `finally` is always attached to a `try`. It can't stand on its own.
+
+---
+
+### Combo 7: `try` + Multiple `catch` blocks ✅
+
+You can have **many** `catch` blocks to handle different exception types.
+
+```java
+public class Demo {
+    public static void main(String[] args) {
+        try {
+            int[] arr = {1, 2};
+            System.out.println(arr[5]);
+        } catch (ArithmeticException e) {
+            System.out.println("Math error!");
+        } catch (ArrayIndexOutOfBoundsException e) {
+            System.out.println("Array index error!");
+        } catch (Exception e) {
+            System.out.println("Some other error!");
+        }
+    }
+}
+```
+
+**Output:**
+
+```text
+Array index error!
+```
+
+> ✅ **Verdict:** Valid! Remember — **specific exceptions first, general exceptions last.**
+
+---
+
+### Combo 8: `try` + Multiple `catch` + `finally` ✅
+
+The ultimate combo — handle multiple exception types AND always clean up.
+
+```java
+public class Demo {
+    public static void main(String[] args) {
+        try {
+            String text = null;
+            System.out.println(text.length());
+        } catch (ArithmeticException e) {
+            System.out.println("Math error!");
+        } catch (NullPointerException e) {
+            System.out.println("Null error: can't use null!");
+        } finally {
+            System.out.println("Cleanup done!");
+        }
+    }
+}
+```
+
+**Output:**
+
+```text
+Null error: can't use null!
+Cleanup done!
+```
+
+> ✅ **Verdict:** Perfectly valid. This is common in real-world applications.
+
+---
+
+### Combo 9: Nested `try-catch` (try inside try) ✅
+
+You can put a `try-catch` **inside** another `try-catch`. This is useful when different parts of your code might throw different exceptions.
+
+```java
+public class Demo {
+    public static void main(String[] args) {
+        try {
+            System.out.println("Outer try");
+
+            try {
+                int result = 10 / 0;   // 💥 Inner exception
+            } catch (ArithmeticException e) {
+                System.out.println("Inner catch: " + e.getMessage());
+            }
+
+            System.out.println("Back in outer try");
+        } catch (Exception e) {
+            System.out.println("Outer catch");
+        }
+    }
+}
+```
+
+**Output:**
+
+```text
+Outer try
+Inner catch: / by zero
+Back in outer try
+```
+
+> ✅ **Verdict:** Valid! The inner `catch` handles the inner exception, so the outer `try` continues normally.
+
+> 💡 **Tip:** Don't nest too deeply — it makes code hard to read. If you find yourself nesting 3+ levels, consider breaking the code into separate methods.
+
+---
+
+### 📋 Quick Reference Table — All Combinations
+
+| # | Combination | Valid? | Notes |
+|---|------------|:------:|-------|
+| 1 | `try` + `catch` | ✅ | Most common pattern |
+| 2 | `try` + `finally` | ✅ | Cleanup without handling |
+| 3 | `try` + `catch` + `finally` | ✅ | Full package — handle + cleanup |
+| 4 | `try` alone | ❌ | Must have `catch` or `finally` |
+| 5 | `catch` alone | ❌ | `catch` needs a `try` |
+| 6 | `finally` alone | ❌ | `finally` needs a `try` |
+| 7 | `try` + multiple `catch` | ✅ | Specific first, general last |
+| 8 | `try` + multiple `catch` + `finally` | ✅ | Most complete pattern |
+| 9 | Nested `try-catch` | ✅ | Don't nest too deep |
+
+### 🧠 Simple Memory Rule
+
+```text
+✅ try MUST have → at least one catch OR finally (or both)
+❌ catch ALONE   → NOT allowed (needs try)
+❌ finally ALONE → NOT allowed (needs try)
+❌ try ALONE     → NOT allowed (needs catch or finally)
+```
+
+> 💡 **One-liner to remember:** `try` never walks alone — it always needs a `catch` or a `finally` by its side!
+
+---
+
+## 13. 🖨️ Methods to Print Exception Information
 
 When an exception occurs, you'll want to know: **What went wrong? Where? Why?**
 
@@ -1079,7 +1396,7 @@ printStackTrace() →  📑 Full incident report →  class + message + file + l
 
 ---
 
-## 13. ✅ Best Practices for Exception Handling
+## 14. ✅ Best Practices for Exception Handling
 
 ### 1. Never Leave `catch` Blocks Empty
 
@@ -1145,7 +1462,7 @@ Something went wrong. Please try again.
 
 ---
 
-## 14. Difference Between final, finally and finalize() in Java
+## 15. Difference Between final, finally and finalize() in Java
 
 ### Java: `final` vs `finally` vs `finalize()`
 
@@ -1284,4 +1601,354 @@ No. `final` only prevents reassignment of the reference. For true immutability, 
 
 **Q: Why was `finalize()` deprecated?**
 Because of non-deterministic execution, potential to delay GC, and risk of resource leaks — replaced by `try-with-resources`, `AutoCloseable`, and `Cleaner`.
+
+---
+
+## 16. 🚀 The `throw` Keyword in Java
+
+So far, we've seen Java **automatically** throwing exceptions when something goes wrong (like dividing by zero). But what if **you** want to throw an exception **yourself**?
+
+That's exactly what the `throw` keyword does!
+
+### What is `throw`?
+
+The `throw` keyword lets you **manually create and throw an exception** from your code.
+
+> 💡 **Simple definition:** `throw` = "Hey Java, I found a problem — here, deal with this exception!"
+
+### Real-Life Analogy 🎯
+
+> Imagine you're a teacher checking exam papers 📝
+> - Java automatically catches cheating (built-in exceptions like `ArithmeticException`).
+> - But what if a student submits a **blank paper**? Java doesn't know that's wrong — **you** have to raise the flag yourself!
+> - `throw` = You (the teacher) **manually raising a red flag** 🚩 to say "This is not acceptable!"
+
+---
+
+### Basic Syntax
+
+```java
+throw new ExceptionType("Your error message here");
+```
+
+**Key points:**
+- `throw` is followed by an **exception object** (using `new`).
+- You provide a **message** that explains what went wrong.
+- After `throw` executes, the remaining code in that block is **skipped** — just like when Java throws an exception automatically.
+
+---
+
+### ✏️ Example 1 — Throwing a Built-in Exception
+
+Let's say you're writing a method that accepts a person's age. A negative age makes no sense — so you **throw** an exception yourself.
+
+```java
+public class Main {
+    public static void checkAge(int age) {
+        if (age < 0) {
+            throw new IllegalArgumentException("Age cannot be negative: " + age);
+        }
+        System.out.println("Age is valid: " + age);
+    }
+
+    public static void main(String[] args) {
+        checkAge(25);    // ✅ Works fine
+        checkAge(-5);    // 💥 Throws exception!
+    }
+}
+```
+
+**Output:**
+
+```text
+Age is valid: 25
+Exception in thread "main" java.lang.IllegalArgumentException: Age cannot be negative: -5
+```
+
+> 🧠 **What happened?**
+> 1. `checkAge(25)` — age is valid, prints normally.
+> 2. `checkAge(-5)` — age is negative, so **we** throw an `IllegalArgumentException`.
+> 3. Since nobody caught it, the program crashes with our custom message.
+
+---
+
+### ✏️ Example 2 — Throwing and Catching with try-catch
+
+In the previous example, the program crashed. Let's **catch** the thrown exception instead:
+
+```java
+public class Main {
+    public static void checkAge(int age) {
+        if (age < 0) {
+            throw new IllegalArgumentException("Age cannot be negative: " + age);
+        }
+        System.out.println("Age is valid: " + age);
+    }
+
+    public static void main(String[] args) {
+        try {
+            checkAge(-5);
+        } catch (IllegalArgumentException e) {
+            System.out.println("⚠️ Error caught: " + e.getMessage());
+        }
+
+        System.out.println("Program continues normally!");
+    }
+}
+```
+
+**Output:**
+
+```text
+⚠️ Error caught: Age cannot be negative: -5
+Program continues normally!
+```
+
+> ✅ Now the exception is caught, and the program **doesn't crash**!
+
+---
+
+### ✏️ Example 3 — Throwing Different Built-in Exceptions
+
+You can throw **any** exception class that Java provides:
+
+```java
+public class Main {
+    public static void withdraw(double balance, double amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive!");
+        }
+        if (amount > balance) {
+            throw new ArithmeticException("Insufficient balance!");
+        }
+        System.out.println("Withdrawn: ₹" + amount);
+    }
+
+    public static void main(String[] args) {
+        try {
+            withdraw(1000, 500);     // ✅ Works
+            withdraw(1000, 2000);    // 💥 Throws ArithmeticException
+        } catch (IllegalArgumentException e) {
+            System.out.println("⚠️ Invalid input: " + e.getMessage());
+        } catch (ArithmeticException e) {
+            System.out.println("⚠️ Transaction failed: " + e.getMessage());
+        }
+    }
+}
+```
+
+**Output:**
+
+```text
+Withdrawn: ₹500.0
+⚠️ Transaction failed: Insufficient balance!
+```
+
+---
+
+### 🛠️ Custom Exceptions — Why Do We Need Them?
+
+Java's built-in exceptions (`ArithmeticException`, `NullPointerException`, etc.) are general-purpose. But sometimes you need **your own exception** that describes a **specific problem** in your application.
+
+> 🎯 **Analogy:** Java's built-in exceptions are like **generic medicine** 💊 — they work for common problems.
+> Custom exceptions are like **prescription medicine** 📋 — made specifically for YOUR problem!
+
+There are **two types** of custom exceptions you can create:
+
+| Type | Extends | Must Handle? | When to Use |
+|------|---------|:------------:|-------------|
+| **Custom Unchecked** | `RuntimeException` | ❌ No (optional) | Programming errors, validation failures |
+| **Custom Checked** | `Exception` | ✅ Yes (forced) | External failures (file, network, DB) |
+
+---
+
+### 📦 Custom Unchecked Exception (extends `RuntimeException`)
+
+Unchecked exceptions are for problems caused by **mistakes in the code** — like passing invalid values. The compiler **won't force** you to handle them.
+
+#### Step 1: Create the Custom Exception Class
+
+```java
+// This is our custom exception — it extends RuntimeException (unchecked)
+public class InvalidAgeException extends RuntimeException {
+    public InvalidAgeException(String message) {
+        super(message);    // Pass the message to the parent class
+    }
+}
+```
+
+> 💡 `super(message)` sends the error message up to `RuntimeException`, which stores it. Later you can retrieve it using `getMessage()`.
+
+#### Step 2: Throw It in Your Code
+
+```java
+public class AgeValidator {
+    public static void validate(int age) {
+        if (age < 0 || age > 150) {
+            throw new InvalidAgeException("Invalid age: " + age + ". Age must be between 0 and 150.");
+        }
+        System.out.println("✅ Age " + age + " is valid.");
+    }
+
+    public static void main(String[] args) {
+        validate(25);     // ✅ Valid
+        validate(200);    // 💥 Throws InvalidAgeException
+    }
+}
+```
+
+**Output:**
+
+```text
+✅ Age 25 is valid.
+Exception in thread "main" InvalidAgeException: Invalid age: 200. Age must be between 0 and 150.
+```
+
+#### Step 3: Handle It with try-catch (Optional but Recommended)
+
+Since it's unchecked, the compiler **won't force** you — but it's good practice to handle it:
+
+```java
+public static void main(String[] args) {
+    try {
+        validate(200);
+    } catch (InvalidAgeException e) {
+        System.out.println("⚠️ Caught: " + e.getMessage());
+    }
+
+    System.out.println("Program continues!");
+}
+```
+
+**Output:**
+
+```text
+⚠️ Caught: Invalid age: 200. Age must be between 0 and 150.
+Program continues!
+```
+
+---
+
+### 📦 Custom Checked Exception (extends `Exception`)
+
+Checked exceptions are for problems caused by **external factors** — things outside your code's control (missing files, failed network calls, etc.). The compiler **forces** you to handle them.
+
+#### Step 1: Create the Custom Exception Class
+
+```java
+// This is our custom exception — it extends Exception (checked)
+public class InsufficientFundsException extends Exception {
+    public InsufficientFundsException(String message) {
+        super(message);
+    }
+}
+```
+
+#### Step 2: Throw It in Your Code
+
+Since this is a **checked** exception, the method that throws it **must declare** it using `throws`:
+
+```java
+public class BankAccount {
+    private double balance;
+
+    public BankAccount(double balance) {
+        this.balance = balance;
+    }
+
+    // ⬇️ Notice the 'throws' keyword in the method signature
+    public void withdraw(double amount) throws InsufficientFundsException {
+        if (amount > balance) {
+            throw new InsufficientFundsException(
+                "Cannot withdraw ₹" + amount + ". Available balance: ₹" + balance
+            );
+        }
+        balance -= amount;
+        System.out.println("✅ Withdrawn: ₹" + amount + " | Remaining: ₹" + balance);
+    }
+}
+```
+
+> 🧠 **Why `throws` in the method signature?**
+> Because it's a checked exception — Java says: *"This method might fail. Warn everyone who calls it!"*
+> The `throws` keyword is like a **warning label** ⚠️ on the method.
+
+#### Step 3: Handle It with try-catch (Mandatory!)
+
+The compiler **forces** you to handle checked exceptions — you can't ignore them:
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        BankAccount account = new BankAccount(1000);
+
+        try {
+            account.withdraw(500);     // ✅ Works
+            account.withdraw(800);     // 💥 Throws InsufficientFundsException
+        } catch (InsufficientFundsException e) {
+            System.out.println("⚠️ Transaction failed: " + e.getMessage());
+        }
+
+        System.out.println("Program continues!");
+    }
+}
+```
+
+**Output:**
+
+```text
+✅ Withdrawn: ₹500.0 | Remaining: ₹500.0
+⚠️ Transaction failed: Cannot withdraw ₹800.0. Available balance: ₹500.0
+Program continues!
+```
+
+> ❌ **What happens if you DON'T handle it?**
+> ```java
+> // This WON'T COMPILE!
+> public static void main(String[] args) {
+>     BankAccount account = new BankAccount(1000);
+>     account.withdraw(2000);   // ❌ Compiler Error: Unhandled exception
+> }
+> ```
+> The compiler says: *"You must handle `InsufficientFundsException` with try-catch or declare it with throws!"*
+
+---
+
+### 🆚 Custom Unchecked vs Custom Checked — Side-by-Side
+
+| Feature | Custom Unchecked 🍌 | Custom Checked ✈️ |
+|---------|---------------------|--------------------|
+| **Extends** | `RuntimeException` | `Exception` |
+| **Compiler forces handling?** | ❌ No | ✅ Yes |
+| **Needs `throws` in method?** | ❌ No | ✅ Yes |
+| **Caused by** | Code mistakes (bugs) | External problems |
+| **If not handled?** | Compiles but may crash 💥 | Won't compile ❌ |
+| **Example use case** | Invalid age, negative price | No funds, file missing |
+| **Analogy** | Banana peel 🍌 — your fault | Flat tyre ✈️ — not your fault |
+
+---
+
+### 🧠 `throw` vs `throws` — Don't Confuse Them!
+
+These two look similar but do **completely different** things:
+
+| Feature | `throw` | `throws` |
+|---------|---------|----------|
+| **What it is** | A **statement** | A **declaration** |
+| **Where it's used** | Inside a method body | In the method signature |
+| **Purpose** | Actually **creates and throws** the exception | **Warns** that this method might throw an exception |
+| **How many?** | Throws **one** exception at a time | Can declare **multiple** exceptions |
+
+---
+
+### 📝 Quick Recap
+
+```text
+throw   →  Manually create and throw an exception object
+throws  →  Declare that a method might throw an exception
+
+Custom Unchecked  →  extends RuntimeException  →  compiler won't force handling
+Custom Checked    →  extends Exception          →  compiler WILL force handling
+```
+
 
