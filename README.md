@@ -27,6 +27,7 @@
 | 16 | [The throw Keyword](#16--the-throw-keyword-in-java) |
 | 17 | [The throws Keyword](#17--the-throws-keyword-in-java) |
 | 18 | [throw vs throws — Complete Comparison](#18--throw-vs-throws--complete-comparison-interview-ready) |
+| 19 | [Practice Examples — Java Exception Handling](#19-️-practice-examples--java-exception-handling) |
 
 ---
 
@@ -2298,3 +2299,664 @@ Passing up the chain  →  methodA() throws X  →  methodB() throws X  →  mai
 ### Final Interview One-Liner (Memorize This)
 
 `throw` is used to create and throw an exception inside a method. `throws` is used in the method declaration to tell the caller that the method may throw one or more exceptions, so the caller should handle or propagate them.
+
+---
+
+## 19. 🏋️ Practice Examples — Java Exception Handling
+
+Now that you've learned all the concepts, it's time to **practice**! Below are **10 hands-on examples**, each demonstrating a different concept. Try to **predict the output** before reading the explanation — that's the best way to learn!
+
+> 🎯 **How to use this section:**
+> 1. Read the code carefully.
+> 2. Guess the output in your head.
+> 3. Check the actual output and explanation below.
+> 4. If you got it wrong — re-read the concept section linked with each example.
+
+---
+
+### Practice 1: Basic try-catch — Division by Zero
+
+**Concept:** `try-catch` block basics — catching a runtime exception.
+
+```java
+public class Practice1 {
+    public static void main(String[] args) {
+        System.out.println("Program started");
+
+        try {
+            int numerator = 100;
+            int denominator = 0;
+            int result = numerator / denominator;   // 💥 ArithmeticException
+            System.out.println("Result: " + result);
+        } catch (ArithmeticException e) {
+            System.out.println("⚠️ Cannot divide by zero! Error: " + e.getMessage());
+        }
+
+        System.out.println("Program ended normally");
+    }
+}
+```
+
+**Output:**
+
+```text
+Program started
+⚠️ Cannot divide by zero! Error: / by zero
+Program ended normally
+```
+
+**🧠 Explanation:**
+- The code inside `try` attempts to divide 100 by 0, which is mathematically impossible.
+- Java throws an `ArithmeticException` at that line.
+- The `catch` block catches it and prints a friendly error message.
+- The line `System.out.println("Result: " + result);` **never runs** — once an exception occurs, Java jumps straight to the matching `catch`.
+- After the `catch` block, the program **continues normally** — it doesn't crash.
+
+> 📖 **Related section:** [Section 8 — Try-Catch Exception Handling](#8--try-catch-exception-handling)
+
+---
+
+### Practice 2: Multiple Catch Blocks — Handling Different Exceptions
+
+**Concept:** Using multiple `catch` blocks to handle different exception types separately.
+
+```java
+public class Practice2 {
+    public static void main(String[] args) {
+        try {
+            int[] scores = {90, 85, 78};
+
+            // 💥 This will throw ArrayIndexOutOfBoundsException (index 10 doesn't exist)
+            System.out.println("Score: " + scores[10]);
+
+            // This line won't execute because the exception already occurred above
+            int result = 10 / 0;
+
+        } catch (ArithmeticException e) {
+            System.out.println("⚠️ Math error: " + e.getMessage());
+        } catch (ArrayIndexOutOfBoundsException e) {
+            System.out.println("⚠️ Invalid index! " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("⚠️ Something else went wrong: " + e.getMessage());
+        }
+
+        System.out.println("Program continues...");
+    }
+}
+```
+
+**Output:**
+
+```text
+⚠️ Invalid index! Index 10 out of bounds for length 3
+Program continues...
+```
+
+**🧠 Explanation:**
+- The `try` block has two risky lines, but only the **first** one (`scores[10]`) throws an exception.
+- Java checks each `catch` block **from top to bottom** looking for a match.
+- `ArithmeticException`? ❌ Doesn't match. Skip.
+- `ArrayIndexOutOfBoundsException`? ✅ Match found! This `catch` block runs.
+- The third `catch (Exception e)` acts as a **safety net** — it would catch anything that the first two don't. But since we already found a match, it's skipped.
+- **Key rule:** Always put specific exceptions **before** general ones. If `Exception` was first, it would catch everything, and the other `catch` blocks would be unreachable (compiler error!).
+
+> 📖 **Related section:** [Section 10 — Multiple Catch Blocks](#10--multiple-catch-blocks)
+
+---
+
+### Practice 3: The `finally` Block — Guaranteed Cleanup
+
+**Concept:** The `finally` block **always** runs — no matter what happens in `try` and `catch`.
+
+```java
+import java.io.FileReader;
+import java.io.IOException;
+
+public class Practice3 {
+    public static void main(String[] args) {
+        FileReader reader = null;
+
+        try {
+            System.out.println("Attempting to open file...");
+            reader = new FileReader("non_existent_file.txt");   // 💥 FileNotFoundException
+            System.out.println("File opened!");
+        } catch (IOException e) {
+            System.out.println("⚠️ File error: " + e.getMessage());
+        } finally {
+            System.out.println("🧹 Cleanup: Closing resources...");
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    System.out.println("Error closing reader");
+                }
+            }
+            System.out.println("🧹 Cleanup complete!");
+        }
+
+        System.out.println("Program continues...");
+    }
+}
+```
+
+**Output:**
+
+```text
+Attempting to open file...
+⚠️ File error: non_existent_file.txt (No such file or directory)
+🧹 Cleanup: Closing resources...
+🧹 Cleanup complete!
+Program continues...
+```
+
+**🧠 Explanation:**
+- The file doesn't exist, so `FileReader` throws a `FileNotFoundException` (which is a subclass of `IOException`).
+- The `catch` block handles it and prints the error message.
+- The `finally` block runs **after** the catch — this is where we close resources like file readers, database connections, etc.
+- Even if the `catch` block didn't exist and the exception went unhandled, `finally` would **still** run before the program terminates.
+- **Real-world usage:** `finally` is critical for preventing **resource leaks** — you must always close what you open!
+
+> 📖 **Related section:** [Section 11 — The finally Block](#11--the-finally-block)
+
+---
+
+### Practice 4: Nested try-catch — Inner and Outer Exception Handling
+
+**Concept:** Placing a `try-catch` inside another `try-catch` — each level handles its own errors.
+
+```java
+public class Practice4 {
+    public static void main(String[] args) {
+        try {
+            System.out.println("🔵 Outer try started");
+
+            // --- Inner try-catch #1 ---
+            try {
+                System.out.println("  🟢 Inner try 1: Dividing...");
+                int result = 50 / 0;   // 💥 ArithmeticException
+                System.out.println("  Result: " + result);
+            } catch (ArithmeticException e) {
+                System.out.println("  ⚠️ Inner catch 1: " + e.getMessage());
+            }
+
+            System.out.println("🔵 Back in outer try");
+
+            // --- Inner try-catch #2 ---
+            try {
+                System.out.println("  🟡 Inner try 2: Accessing array...");
+                int[] nums = {1, 2, 3};
+                System.out.println("  Value: " + nums[5]);   // 💥 ArrayIndexOutOfBoundsException
+            } catch (ArrayIndexOutOfBoundsException e) {
+                System.out.println("  ⚠️ Inner catch 2: " + e.getMessage());
+            }
+
+            System.out.println("🔵 Outer try completed");
+
+        } catch (Exception e) {
+            System.out.println("🔴 Outer catch: " + e.getMessage());
+        }
+
+        System.out.println("✅ Program ended normally");
+    }
+}
+```
+
+**Output:**
+
+```text
+🔵 Outer try started
+  🟢 Inner try 1: Dividing...
+  ⚠️ Inner catch 1: / by zero
+🔵 Back in outer try
+  🟡 Inner try 2: Accessing array...
+  ⚠️ Inner catch 2: Index 5 out of bounds for length 3
+🔵 Outer try completed
+✅ Program ended normally
+```
+
+**🧠 Explanation:**
+- The outer `try` contains two **nested** `try-catch` blocks.
+- **Inner try 1** throws an `ArithmeticException` → caught by **Inner catch 1**. Outer try continues.
+- **Inner try 2** throws an `ArrayIndexOutOfBoundsException` → caught by **Inner catch 2**. Outer try continues.
+- The outer `catch` **never runs** because both inner exceptions were handled internally.
+- **When to use nested try-catch:** When different parts of your code can fail independently, and you want to handle each failure separately without stopping the whole process.
+- **Tip:** If an inner `catch` can't handle the exception, it "bubbles up" to the outer `catch`.
+
+> 📖 **Related section:** [Section 12 — Combo 9: Nested try-catch](#combo-9-nested-try-catch-try-inside-try-)
+
+---
+
+### Practice 5: The `throw` Keyword — Manually Throwing Exceptions
+
+**Concept:** Using `throw` to **manually create and throw** an exception when your code detects something wrong.
+
+```java
+public class Practice5 {
+
+    public static void setPercentage(double percentage) {
+        if (percentage < 0 || percentage > 100) {
+            // We MANUALLY throw an exception — Java wouldn't do this automatically
+            throw new IllegalArgumentException(
+                "Percentage must be between 0 and 100. Got: " + percentage
+            );
+        }
+        System.out.println("✅ Percentage set to: " + percentage + "%");
+    }
+
+    public static void main(String[] args) {
+        try {
+            setPercentage(85.5);    // ✅ Valid
+            setPercentage(110);     // 💥 Invalid — we throw an exception
+            setPercentage(50);      // ❌ This line never runs
+        } catch (IllegalArgumentException e) {
+            System.out.println("⚠️ Error: " + e.getMessage());
+        }
+
+        System.out.println("Program continues...");
+    }
+}
+```
+
+**Output:**
+
+```text
+✅ Percentage set to: 85.5%
+⚠️ Error: Percentage must be between 0 and 100. Got: 110.0
+Program continues...
+```
+
+**🧠 Explanation:**
+- `setPercentage(85.5)` is valid, so it prints successfully.
+- `setPercentage(110)` violates our business rule (percentage > 100), so we **manually throw** an `IllegalArgumentException`.
+- Java doesn't know that 110 is "wrong" — it's a valid `double`. It's **our** business logic that says it's invalid. That's why we use `throw` — to enforce **our own rules**.
+- The `catch` block in `main()` catches the thrown exception.
+- `setPercentage(50)` **never executes** because the exception at `110` caused Java to jump to the `catch` block immediately.
+
+> 📖 **Related section:** [Section 16 — The throw Keyword](#16--the-throw-keyword-in-java)
+
+---
+
+### Practice 6: The `throws` Keyword — Passing Responsibility to the Caller
+
+**Concept:** Declaring that a method **might throw** a checked exception, so the caller is forced to handle it.
+
+```java
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
+public class Practice6 {
+
+    // This method DECLARES that it might throw IOException
+    // It doesn't handle it — it passes the responsibility to whoever calls it
+    public static String readFirstLine(String fileName) throws IOException {
+        BufferedReader br = new BufferedReader(new FileReader(fileName));
+        String line = br.readLine();
+        br.close();
+        return line;
+    }
+
+    // This method ALSO doesn't handle it — passes it further up
+    public static void displayFirstLine(String fileName) throws IOException {
+        String line = readFirstLine(fileName);
+        System.out.println("First line: " + line);
+    }
+
+    // Finally, main() handles the exception with try-catch
+    public static void main(String[] args) {
+        try {
+            displayFirstLine("my_notes.txt");
+        } catch (IOException e) {
+            System.out.println("⚠️ Could not read file: " + e.getMessage());
+        }
+
+        System.out.println("Program continues...");
+    }
+}
+```
+
+**Output (if file doesn't exist):**
+
+```text
+⚠️ Could not read file: my_notes.txt (No such file or directory)
+Program continues...
+```
+
+**🧠 Explanation:**
+- `readFirstLine()` might throw `IOException` (file may not exist or be unreadable). Instead of handling it with `try-catch`, it **declares** `throws IOException` and lets the caller deal with it.
+- `displayFirstLine()` calls `readFirstLine()` but **also** doesn't handle it — it declares `throws IOException` too, passing it up again.
+- Finally, `main()` catches the exception with `try-catch`.
+- **The exception traveled up the call chain:**
+  ```
+  readFirstLine() ──throws──▶ displayFirstLine() ──throws──▶ main() ──catches ✅
+  ```
+- **Key rule:** For **checked exceptions** (like `IOException`), every method in the chain must either `catch` it or declare `throws`. For unchecked exceptions, `throws` is optional.
+
+> 📖 **Related section:** [Section 17 — The throws Keyword](#17--the-throws-keyword-in-java)
+
+---
+
+### Practice 7: Custom Checked Exception — Building Your Own Exception Class
+
+**Concept:** Creating a **custom checked exception** by extending `Exception` — the compiler forces callers to handle it.
+
+```java
+// Step 1: Define the custom checked exception
+class InsufficientBalanceException extends Exception {
+    private double shortfall;
+
+    public InsufficientBalanceException(String message, double shortfall) {
+        super(message);
+        this.shortfall = shortfall;
+    }
+
+    public double getShortfall() {
+        return shortfall;
+    }
+}
+
+// Step 2: Use it in your business logic
+class BankAccount {
+    private double balance;
+
+    public BankAccount(double balance) {
+        this.balance = balance;
+    }
+
+    // ✅ Must declare "throws" because it's a CHECKED exception
+    public void withdraw(double amount) throws InsufficientBalanceException {
+        if (amount > balance) {
+            throw new InsufficientBalanceException(
+                "Cannot withdraw ₹" + amount + ". Balance is only ₹" + balance,
+                amount - balance
+            );
+        }
+        balance -= amount;
+        System.out.println("✅ Withdrawn: ₹" + amount + " | Remaining: ₹" + balance);
+    }
+}
+
+// Step 3: Caller is FORCED to handle it
+public class Practice7 {
+    public static void main(String[] args) {
+        BankAccount account = new BankAccount(5000);
+
+        try {
+            account.withdraw(2000);    // ✅ Success
+            account.withdraw(4000);    // 💥 Insufficient balance
+        } catch (InsufficientBalanceException e) {
+            System.out.println("⚠️ " + e.getMessage());
+            System.out.println("💰 You need ₹" + e.getShortfall() + " more.");
+        }
+
+        System.out.println("Program continues...");
+    }
+}
+```
+
+**Output:**
+
+```text
+✅ Withdrawn: ₹2000.0 | Remaining: ₹3000.0
+⚠️ Cannot withdraw ₹4000.0. Balance is only ₹3000.0
+💰 You need ₹1000.0 more.
+Program continues...
+```
+
+**🧠 Explanation:**
+- `InsufficientBalanceException` is a **custom checked exception** — it extends `Exception`.
+- It has an extra field `shortfall` that stores how much more money is needed. Custom exceptions can hold **additional data** beyond just a message!
+- Since it's checked, the `withdraw()` method **must** declare `throws InsufficientBalanceException`, and the caller **must** handle it with `try-catch` (or declare `throws` itself).
+- The first withdrawal succeeds (2000 < 5000). The second fails (4000 > remaining 3000), so our custom exception is thrown.
+- **When to create custom checked exceptions:** When you're dealing with **recoverable** problems that the caller **must** be aware of — like insufficient funds, invalid input from external sources, or failed business rules.
+
+> 📖 **Related section:** [Section 16 — Custom Checked Exception](#-custom-checked-exception-extends-exception)
+
+---
+
+### Practice 8: Custom Unchecked Exception — Runtime Validation
+
+**Concept:** Creating a **custom unchecked exception** by extending `RuntimeException` — the compiler does NOT force handling.
+
+```java
+// Step 1: Define the custom unchecked exception
+class InvalidEmailException extends RuntimeException {
+    public InvalidEmailException(String message) {
+        super(message);
+    }
+}
+
+// Step 2: Use it for validation
+class UserRegistration {
+    public static void registerUser(String email, String name) {
+        // Validate email — our own business rule
+        if (email == null || !email.contains("@") || !email.contains(".")) {
+            // No "throws" needed in the method signature — it's unchecked!
+            throw new InvalidEmailException(
+                "Invalid email format: '" + email + "'. Must contain '@' and '.'"
+            );
+        }
+
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Name cannot be empty!");
+        }
+
+        System.out.println("✅ User registered: " + name + " (" + email + ")");
+    }
+}
+
+// Step 3: Handle it (optional, but recommended)
+public class Practice8 {
+    public static void main(String[] args) {
+        // Test 1: Valid registration
+        try {
+            UserRegistration.registerUser("sanket@gmail.com", "Sanket");
+        } catch (InvalidEmailException | IllegalArgumentException e) {
+            System.out.println("⚠️ Registration failed: " + e.getMessage());
+        }
+
+        // Test 2: Invalid email
+        try {
+            UserRegistration.registerUser("not-an-email", "Rahul");
+        } catch (InvalidEmailException | IllegalArgumentException e) {
+            System.out.println("⚠️ Registration failed: " + e.getMessage());
+        }
+
+        // Test 3: Empty name
+        try {
+            UserRegistration.registerUser("rahul@gmail.com", "");
+        } catch (InvalidEmailException | IllegalArgumentException e) {
+            System.out.println("⚠️ Registration failed: " + e.getMessage());
+        }
+
+        System.out.println("All registration attempts processed.");
+    }
+}
+```
+
+**Output:**
+
+```text
+✅ User registered: Sanket (sanket@gmail.com)
+⚠️ Registration failed: Invalid email format: 'not-an-email'. Must contain '@' and '.'
+⚠️ Registration failed: Name cannot be empty!
+All registration attempts processed.
+```
+
+**🧠 Explanation:**
+- `InvalidEmailException` extends `RuntimeException`, making it **unchecked**. The `registerUser()` method **doesn't need** `throws` in its signature.
+- Notice the `catch (InvalidEmailException | IllegalArgumentException e)` — this is a **multi-catch** block (Java 7+). It catches **either** exception type with a single catch block, keeping the code clean.
+- Test 1 passes validation → user registered.
+- Test 2 fails email validation → our custom `InvalidEmailException` is thrown.
+- Test 3 fails name validation → built-in `IllegalArgumentException` is thrown.
+- **When to create custom unchecked exceptions:** When the error is caused by a **programming mistake** or **invalid input** that the developer should have prevented — like bad email format, null values, or business rule violations.
+
+> 📖 **Related section:** [Section 16 — Custom Unchecked Exception](#-custom-unchecked-exception-extends-runtimeexception)
+
+---
+
+### Practice 9: Try-with-Resources — Automatic Cleanup
+
+**Concept:** `try-with-resources` (Java 7+) **automatically closes** resources when the `try` block finishes — no need for `finally`!
+
+```java
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
+public class Practice9 {
+    public static void main(String[] args) {
+
+        String fileName = "practice_output.txt";
+
+        // ✅ Writing to a file using try-with-resources
+        // The BufferedWriter is AUTOMATICALLY closed when the try block ends
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+            writer.write("Hello from Java!");
+            writer.newLine();
+            writer.write("This file was created using try-with-resources.");
+            System.out.println("✅ File written successfully!");
+        } catch (IOException e) {
+            System.out.println("⚠️ Write error: " + e.getMessage());
+        }
+        // No finally needed! writer.close() happens automatically ✨
+
+        // ✅ Reading the file back using try-with-resources
+        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+            String line;
+            System.out.println("\n📄 File contents:");
+            while ((line = reader.readLine()) != null) {
+                System.out.println("  " + line);
+            }
+        } catch (IOException e) {
+            System.out.println("⚠️ Read error: " + e.getMessage());
+        }
+        // reader.close() also happens automatically! ✨
+
+        System.out.println("\nProgram continues...");
+    }
+}
+```
+
+**Output:**
+
+```text
+✅ File written successfully!
+
+📄 File contents:
+  Hello from Java!
+  This file was created using try-with-resources.
+
+Program continues...
+```
+
+**🧠 Explanation:**
+- The `try (Resource res = ...)` syntax is called **try-with-resources**. Any resource declared inside the parentheses is **automatically closed** when the `try` block ends — whether it ends normally or due to an exception.
+- The resource must implement the `AutoCloseable` interface (most I/O classes like `FileReader`, `BufferedWriter`, `Connection`, etc. already do).
+- **Before Java 7**, you had to manually close resources in a `finally` block — which was verbose and error-prone. Try-with-resources is the **modern, cleaner alternative**.
+- You can declare **multiple resources** separated by semicolons:
+  ```java
+  try (FileReader fr = new FileReader("a.txt");
+       BufferedReader br = new BufferedReader(fr)) {
+      // both fr and br are auto-closed
+  }
+  ```
+- Resources are closed in **reverse order** of declaration (last opened = first closed).
+
+> 📖 **Related section:** [Section 15 — Modern replacement: try-with-resources](#modern-replacement-try-with-resources--autocloseable)
+
+---
+
+### Practice 10: Interview Scenario — Return in try, catch, and finally
+
+**Concept:** A classic interview question — what happens when `try`, `catch`, and `finally` all have `return` statements?
+
+```java
+public class Practice10 {
+
+    public static int trickyMethod() {
+        try {
+            System.out.println("Inside try");
+            int result = 10 / 0;         // 💥 ArithmeticException
+            return 1;                     // ❌ Never reached
+        } catch (ArithmeticException e) {
+            System.out.println("Inside catch");
+            return 2;                     // 🤔 Will this be the final answer?
+        } finally {
+            System.out.println("Inside finally");
+            // ⚠️ This OVERRIDES the return from catch!
+            return 3;
+        }
+    }
+
+    public static void main(String[] args) {
+        int value = trickyMethod();
+        System.out.println("Returned value: " + value);
+    }
+}
+```
+
+**Output:**
+
+```text
+Inside try
+Inside catch
+Inside finally
+Returned value: 3
+```
+
+**🧠 Explanation — Step by Step:**
+1. **`try` block:** Prints "Inside try", then `10 / 0` throws `ArithmeticException`. The `return 1` is **never reached**.
+2. **`catch` block:** Catches the exception, prints "Inside catch", and prepares to `return 2`.
+3. **`finally` block:** But wait! `finally` **always** runs before the method actually returns. It prints "Inside finally" and then `return 3` **overrides** the `return 2` from `catch`.
+4. **Final answer:** `3` — the value from `finally`.
+
+**⚠️ Interview Key Points:**
+- `finally` **always** executes — even when there's a `return` in `try` or `catch`.
+- A `return` in `finally` **overrides** any `return` from `try` or `catch`. This is considered **bad practice** because it silently swallows exceptions and changes return values.
+- The only ways `finally` does **NOT** run:
+  - `System.exit()` is called.
+  - The JVM crashes.
+  - The thread is killed.
+
+> ⚠️ **Best practice:** **Never put a `return` statement inside a `finally` block** — it leads to confusing and hard-to-debug behavior!
+
+> 📖 **Related section:** [Section 11 — The finally Block](#11--the-finally-block) and [Section 15 — Common Follow-up Questions](#common-follow-up-questions)
+
+---
+
+### 📋 Practice Examples — Quick Reference
+
+| # | Concept | Key Takeaway |
+|---|---------|-------------|
+| 1 | Basic try-catch | Catches exceptions and prevents program crash |
+| 2 | Multiple catch blocks | Specific exceptions first, general (`Exception`) last |
+| 3 | finally block | Always runs — perfect for cleanup (closing files, connections) |
+| 4 | Nested try-catch | Each level handles its own errors independently |
+| 5 | `throw` keyword | Manually throw exceptions for custom business rules |
+| 6 | `throws` keyword | Declare that a method might throw a checked exception |
+| 7 | Custom checked exception | Extends `Exception` — compiler forces handling |
+| 8 | Custom unchecked exception | Extends `RuntimeException` — handling is optional |
+| 9 | Try-with-resources | Auto-closes resources — replaces `finally` for cleanup |
+| 10 | Interview scenario | `return` in `finally` overrides `return` in try/catch |
+
+---
+
+### 🧠 Final Tips for Mastery
+
+```text
+1. try-catch          →  Your safety net — always use it for risky code
+2. Multiple catch     →  Specific first, general last — ORDER MATTERS
+3. finally            →  Always runs — use it for cleanup
+4. Nested try-catch   →  Each level handles its own problems
+5. throw              →  YOU create and throw exceptions manually
+6. throws             →  You WARN the caller about possible exceptions
+7. Custom Checked     →  extends Exception → compiler forces handling
+8. Custom Unchecked   →  extends RuntimeException → handling optional
+9. try-with-resources →  Auto-closes resources — modern & clean
+10. Interview traps    →  return in finally OVERRIDES everything — avoid it!
+```
+
+> 💡 **Pro tip:** The best way to learn exception handling is to **write code that breaks**, then fix it. Don't be afraid of errors — they're your best teacher!
